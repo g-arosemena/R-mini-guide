@@ -1,0 +1,245 @@
+---
+title: "Learning R Part 1"
+output:
+  html_document:
+    df_print: paged
+---
+
+## Introduction
+
+This is a notebook for learning basic stuff in R. 
+I will skip base R this time and go straight to the tidyverse, which is usually easier to use. 
+
+## Loading libraries
+
+
+```{r}
+library(dplyr)
+library(tidyr)
+library(readr)
+```
+
+## Loading data
+
+R comes with loaded datasets, but this time we are going to load an external one to show how it is done. We will print the first five rows with the function "head". Note the general syntax of a function. The function best understood as a *VERB*, it does something. In parenthesis we add the function arguments. Head works here with only one argument, the dataset we are summarizing. 
+
+When we read the dataset we saved it to the variable "diamonds". For this we use the assignment operator"<-". The sign "=" would work just as well, but in R people aesthetically choose "<-".
+
+> Excercise: use the function "str" on diamonds, to show what is the data type of diamonds. Find out in this way how many rows and columns it has. Note. It is always ROWS then COLS.
+
+```{r}
+
+diamonds <- read_csv("diamonds.csv.txt")
+
+head(diamonds)
+
+```
+
+## Getting a look around
+
+It is usually better to "glimpse" than to use "head", because putting the columns in the rows makes it easier to see all the columns. Glimpse is a function that comes with tidyr. It is nicer than head.
+
+```{r}
+glimpse(diamonds)
+
+```
+
+> Excercise: use ?glimpse in the console. See if you can find where it says what package glimpse comes in.
+
+## The pipe
+
+Here we will start to use the pipe operator "%>%" now. We will see that this makes R code more readable. This is super important. The clearer the code, the less likely you make mistakes. 
+
+## Indexing
+
+Indexing a dataframe is getting some column or row out. The easiest way to index in R is with the $ operator. For example:
+
+```{r}
+
+# This is the same as head(diamonds$clarity)
+
+diamonds$clarity %>% head(3)
+
+```
+
+## Parameters
+
+Note that we fed "diamonds$clarity" to head, because we wanted to get only a few examples, and not hundreds. This time we added "3" as an argument to the function head. The function head only needs one argument, the data, and shows 5 rows by default, but we can reduce or augment the rows shown by adding an optional parameter (formally called "argument"). This is easier to see if we keep the old parenthesis syntax:
+
+```{r}
+
+head(diamonds$clarity,3)
+
+```
+
+Lets stay here a while longer. People often just put additional arguments like that, but it is nicer, and makes code more expressive, to put the name of the argument. We do so right here using "n":
+
+```{r}
+
+head(diamonds$clarity, n=3)
+
+```
+
+Parameters (whatever goes inside the parenthesis) can be found *BY POSITION* or *BY NAME*. Lets do something more complicated, the histogram which is the simplest plot. Here we will specify each one of the arguments by name. 
+
+```{r}
+
+hist(diamonds$price,breaks=10,col="gold")
+
+
+```
+
+If you search ?hist and see the help, you will see that breaks (how many histogram bars to draw) is the second parameters. So in theory we could just do:
+
+```{r}
+
+hist(diamonds$price,10)
+
+```
+
+And it will know that "10" refers to the breaks (by position). But if you add the color, it will not grasp what it is supposed to be.
+
+> Excercise: Go to ?head and see if you can find the "n" parameter and note that it is in the second position. What is in the first position? Here R is very criptic. You will have to make sense of the way the help is written.
+
+## Again on indexing
+
+We have used "$" for indexing. However in modern R, it is easier to use dplyr verbs select and filter. Remember we noted that functions were like verbs because they do something. One thing that makes the tidyverse packages intuitive is that functions are called like names ("select", "filter", "rename").
+
+Select picks columns
+
+```{r}
+
+# This is the same as select(diamonds, `carat`, `clarity`)
+
+diamonds %>% select(`carat`,`clarity`)
+
+```
+
+> Excercise: Select 3 different columns
+
+Filter will pick up the rows that satisfy a certain condition
+
+```{r}
+
+diamonds %>% filter(`clarity`=="SI2")
+
+```
+
+> Excercise: Select rows with price more than $2000. Hint: use > or <.
+
+
+What is really powerful is to use select and filter together to get only certain rows of certain columns, and we can add logical requires ments such as "&" and "|" which mean and and or respectively.
+
+```{r}
+
+diamonds %>% select(carat,cut,clarity,price) %>% filter(cut=="Premium" & clarity=="VS1")
+
+```
+
+> Excercise: Use "|" to select clarity VS1 OR clarity VS2
+
+> Excercise: "~" not means NOT. Use this to select every column except price. Note that you don't need to write every column name, just the one you exclude. R selects everything else. 
+
+Here we have essentially a **subset** of the dataframe. A mini dataframe, with only certain columns and certain rows. We are going to give this a name, to save it as a variable, and use this smaller dataframe later. 
+
+
+```{r}
+
+diamonds_mini <- diamonds %>% select(carat,cut,clarity,price) %>%
+  filter(cut=="Premium" & clarity=="VS1") %>% 
+  glimpse
+
+
+```
+
+Lets stop now to show why the pipe is better. Lets imagine we are using diamonds instead of diamonds_mini. Here is how you would do this without pipes:
+
+```{r}
+
+glimpse(filter(select(diamonds, `carat`,`cut`,`clarity`,`price`),cut=="Premium" & clarity=="VS1"))
+
+
+```
+
+Not good!
+
+Pipes are essential to R today. If you read examples online, they will be using the pipe, so it is important to get comfortable with it. 
+
+Note that pipe **feeds** the what is behind the pipe to the first argument of the function. So 
+
+X %>% head(10) %>% hist
+
+The pipe has fed X to the first position in head, and head(10) to the first position of the histogram.
+
+# Mean, var, sd
+
+It is easy to get the mean, var, sd of something. These are just basic functions
+
+```{r}
+diamonds_mini$price %>% mean
+diamonds_mini$price %>% sd
+diamonds_mini$price %>% var
+
+```
+
+Before we have been working with dataframes. Dataframe are two dimensional, they have rows and columsn. diamonds_mini$price only has one dimension, rows. So it is not a dataframe, it is a vector.
+
+> run "str" on diamonds_mini$price
+
+Mean, var, std are operators that work with vectors, and they output a signle value.
+
+This "vector operations" are built into R. They are not built into python. Normally for computers you would have to ask them to make a for loop over every value of the vector and sum them all, save them somehwere, and divide by the length of the vector.
+
+R makes it easy because you just do mean(vector).
+
+> Excercise: save the mean of diamonds_mini$price in a variable test1. Find text 1 in your variable explorer (top right corner).
+
+## Other useful functions
+
+Lets now introduce other useful functions
+
+* c: concatenate
+* length: the length of a vector
+* sum: sum all the elements of a vector
+* unique: show all the unique values of a vector
+* seq: create a sequence
+* cor: correlation
+* cov: covariance
+
+> Excericse: try some of these functions on diamonds_mini.
+
+## Concatenating, ranges, sample
+
+Two of the nicest abilities built into R are concatenating and making number ranges.
+To concatenate we use c. By using ":" we can easily make a sequence of integers. Seq is more powerful, for example you can say make jumps of 2. 
+
+```{r}
+
+some_numbers <- c(1,2,3,4,5,6,7,8,9,10)
+some_numbers2 <- 1:10
+some_numbers3 <- seq(1,10,2)
+
+```
+
+
+>Run the above chunk. Then use your console to test what is the content of the variables defined above.
+
+When we get a vector, we can use sample to randomly draw numbers from it. The code below will draw three random numbers from "sample_numbers". "replace=TRUE" is an argument that means that random sampling will be done with replacement. The number picked can be picked again. you can get 2,2,2. If we put "FALSE", then every number you pick randomly cannot be picked again.
+
+```{r}
+
+sample(some_numbers,3,replace=TRUE)
+
+```
+
+You can use sample to choose random rows in the dataset. This we leave for later.
+
+```{r}
+
+diamonds_mini[sample(some_numbers,3,replace=FALSE),]
+
+```
+
+## End of part 1.
+
+
